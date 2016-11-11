@@ -2,8 +2,10 @@ package com.company.lunch;
 
 import com.company.lunch.Dessert;
 import com.company.lunch.Dish;
+import com.company.menu.MenuItem;
+import com.company.util.Constants;
 
-public class Lunch {
+public class Lunch implements MenuItem {
 
     private Dish dish;
 
@@ -33,5 +35,10 @@ public class Lunch {
     public int getPrice() {
         return (dish != null ? dish.price : 0)
                 + (dessert != null ? dessert.price : 0);
+    }
+
+    @Override
+    public String getName() {
+        return Constants.LUNCH;
     }
 }

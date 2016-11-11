@@ -1,7 +1,6 @@
 package com.company.menu;
 
 
-import com.company.drinks.Beverage;
 import com.company.drinks.Drink;
 import com.company.drinks.IceCubeGarnish;
 import com.company.drinks.LemonGarnish;
@@ -26,7 +25,7 @@ public class OrderSystem {
     public static void main(String[] args) {
         System.out.println("Would you like to order lunch or drink something?");
         Scanner scanner = new Scanner(System.in);
-        List<CustomerOrder> orders = new ArrayList<>();
+        List<MenuItem> orders = new ArrayList<>();
 
         //TODO: Several lunch or drinks ordering functionality should be added in future
         orders.add(getLunchOrder(scanner));
@@ -34,18 +33,18 @@ public class OrderSystem {
         calculatePrice(orders);
     }
 
-    private static CustomerOrder getBeverageOrder(Scanner scanner) {
+    private static MenuItem getBeverageOrder(Scanner scanner) {
         System.out.println("Would you like to drink something? Please enter '" + BEVERAGE + "' or leave it empty otherwise");
         String beverage = getOrderedItem(scanner, "Please make correct order entering '" + BEVERAGE + "'", Menu.BEVERAGES);
         if (!beverage.isEmpty()) {
             String drink = getOrderedItem(scanner, "Please select drink: " + getItemNames(Drink.values()), Menu.DRINK);
             String garnish = getOrderedItem(scanner, "Please select garnish: " + LEMON + " or/and " + ICE, Menu.GARNISH);
-            return buildDrinkOrder(drink, garnish);
+            return prepareDrinkOrder(drink, garnish);
         }
         return null;
     }
 
-    private static CustomerOrder getLunchOrder(Scanner scanner) {
+    private static MenuItem getLunchOrder(Scanner scanner) {
         String lunch = getOrderedItem(scanner, "Please make correct order and enter '" + LUNCH
                 + "' or leave empty if you want to order some beverage", Menu.LUNCH);
 
@@ -54,50 +53,39 @@ public class OrderSystem {
             String dessertSuggestionMessage = "Would you like something from dessert? We offer " + getItemNames(Dessert.values())
                     + " Please enter desert name or leave it empty";
             String dessert = getOrderedItem(scanner, dessertSuggestionMessage, Menu.DESSERT);
-            return buildLunchOrder(dish, dessert);
+            return prepareLunchOrder(dish, dessert);
         }
         return null;
     }
 
-    private static void calculatePrice(List<CustomerOrder> customerOrders) {
-        int price = 0;
-        for (CustomerOrder order : customerOrders) {
+    private static void calculatePrice(List<MenuItem> customerOrders) {
+        int sumPrice = 0;
+        for (MenuItem order : customerOrders) {
             if (order != null) {
-                price = order.getLunch() != null ? order.getLunch().getPrice() : price;
-                System.out.println("Price for a lunch : " + price);
-
-                int beveragePrice = order.getBeverage() != null ? order.getBeverage().getPrice() : 0;
-                price += beveragePrice;
-                System.out.println("Price for a beverage : " + beveragePrice);
+                int price = order != null ? order.getPrice() : 0;
+                sumPrice = sumPrice + price;
             }
         }
-        System.out.println("====Total price of orderings : " + price + " =====Thank you!======");
+        System.out.println("====Total price of orderings : " + sumPrice + " =====Thank you!======");
     }
 
-    private static CustomerOrder buildDrinkOrder(String drink, String garnish) {
+    private static MenuItem prepareDrinkOrder(String drink, String garnish) {
 
-        Beverage orderedBeverage = Drink.valueOf(drink.toUpperCase());
+        MenuItem orderedDrink = Drink.valueOf(drink.toUpperCase());
 
         if (garnish.toUpperCase().contains(LEMON.toUpperCase())) {
-            orderedBeverage = new LemonGarnish(Drink.valueOf(drink.toUpperCase()));
+            orderedDrink = new LemonGarnish(Drink.valueOf(drink.toUpperCase()));
         }
 
         if (garnish.toUpperCase().contains(ICE.toUpperCase())) {
-            orderedBeverage = new IceCubeGarnish(orderedBeverage);
+            orderedDrink = new IceCubeGarnish(orderedDrink);
         }
-
-        return new CustomerOrder.OrderBuilder()
-                .setBeverage(orderedBeverage)
-                .build();
+        return orderedDrink;
     }
 
-    private static CustomerOrder buildLunchOrder(String dish, String dessert) {
-
+    private static MenuItem prepareLunchOrder(String dish, String dessert) {
         Dessert dessertValue = !dessert.isEmpty() ? Dessert.valueOf(dessert.toUpperCase()) : null;
-
-        return new CustomerOrder.OrderBuilder()
-                .setLunch(new Lunch(Dish.valueOf(dish.toUpperCase()), dessertValue))
-                .build();
+        return new Lunch(Dish.valueOf(dish.toUpperCase()), dessertValue);
     }
 
     private static List<String> getItemNames(MenuItem[] values) {
@@ -110,15 +98,15 @@ public class OrderSystem {
         while (true) {
             System.out.println(warningMessage);
             itemName = scanner.nextLine();
-            if (isValidItemFromMenu(itemName, menu)) {
+            if (isValidItem(itemName, menu)) {
                 break;
             }
         }
         return itemName;
     }
 
-    private static boolean isValidItemFromMenu(String order, Menu menu) {
-        //TODO: Should be removed for getting rid of this switch case
+    private static boolean isValidItem(String order, Menu menu) {
+        //TODO: Should be refactored for getting rid of this switch case
         switch (menu) {
             case DISHES:
                 return getItemNames(Dish.values()).contains(order);

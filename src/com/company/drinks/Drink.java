@@ -6,7 +6,7 @@ import com.company.menu.MenuItem;
 import static  com.company.util.Constants.COLA_PRICE;
 import static  com.company.util.Constants.SPRITE_PRICE;
 
-public enum Drink implements Beverage, MenuItem {
+public enum Drink implements MenuItem {
     COLA(COLA_PRICE) {
         @Override
         public String getName() {
