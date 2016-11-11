@@ -8,10 +8,8 @@ import com.company.drinks.LemonGarnish;
 import com.company.lunch.Dessert;
 import com.company.lunch.Dish;
 import com.company.lunch.Lunch;
-import com.company.util.Constants;
-import com.company.util.Menu;
-import com.company.util.MenuItem;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -19,33 +17,65 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.company.util.Constants.LUNCH;
-import static com.company.util.Constants.DRINK;
-import static com.company.util.Constants.LEMON;
-import static com.company.util.Constants.ICE;
+import static com.company.util.Constants.*;
 
 public class OrderSystem {
 
+    private static final String GARNISH_REGEX = "(?i)(\\blemon(\\b.*\\bice\\b)?)|\\bice\\b$";
+
     public static void main(String[] args) {
-        System.out.println("Would you like to order lunch or some drink?");
+        System.out.println("Would you like to order lunch or drink something?");
         Scanner scanner = new Scanner(System.in);
-        String order;
+        List<CustomerOrder> orders = new ArrayList<>();
 
-        order = getCustomerGeneralOrder(scanner, "Please make correct order " + LUNCH + " or " + DRINK);
-
-        int price;
-        if (order.equalsIgnoreCase(LUNCH)) {
-            price = makeLunchOrder(scanner).getLunch().getPrice();
-        } else {
-            price = makeDrinkOrder(scanner).getBeverage().getPrice();
-        }
-
-        System.out.printf("Total price of orderings : " + price);
+        //TODO: Several lunch or drinks ordering functionality should be added in future
+        orders.add(getLunchOrder(scanner));
+        orders.add(getBeverageOrder(scanner));
+        calculatePrice(orders);
     }
 
-    private static CustomerOrder makeDrinkOrder(Scanner scanner) {
-        String drink = getOrderedItem(scanner, "Please select beverage: " + getItems(Drink.values()), Menu.DRINK);
-        String garnish = getOrderedItem(scanner, "Please select garnish: " + LEMON + " or/and " + ICE, Menu.DESSERT.GARNISH);
+    private static CustomerOrder getBeverageOrder(Scanner scanner) {
+        System.out.println("Would you like to drink something? Please enter '" + BEVERAGE + "' or leave it empty otherwise");
+        String beverage = getOrderedItem(scanner, "Please make correct order entering '" + BEVERAGE + "'", Menu.BEVERAGES);
+        if (!beverage.isEmpty()) {
+            String drink = getOrderedItem(scanner, "Please select drink: " + getItemNames(Drink.values()), Menu.DRINK);
+            String garnish = getOrderedItem(scanner, "Please select garnish: " + LEMON + " or/and " + ICE, Menu.GARNISH);
+            return buildDrinkOrder(drink, garnish);
+        }
+        return null;
+    }
+
+    private static CustomerOrder getLunchOrder(Scanner scanner) {
+        String lunch = getOrderedItem(scanner, "Please make correct order and enter '" + LUNCH
+                + "' or leave empty if you want to order some beverage", Menu.LUNCH);
+
+        if (!lunch.isEmpty()) {
+            String dish = getOrderedItem(scanner, "Please select dish: " + getItemNames(Dish.values()), Menu.DISHES);
+            String dessertSuggestionMessage = "Would you like something from dessert? We offer " + getItemNames(Dessert.values())
+                    + " Please enter desert name or leave it empty";
+            String dessert = getOrderedItem(scanner, dessertSuggestionMessage, Menu.DESSERT);
+            return buildLunchOrder(dish, dessert);
+        }
+        return null;
+    }
+
+    private static void calculatePrice(List<CustomerOrder> customerOrders) {
+        int price = 0;
+        for (CustomerOrder order : customerOrders) {
+            if (order != null) {
+                price = order.getLunch() != null ? order.getLunch().getPrice() : price;
+                System.out.println("Price for a lunch : " + price);
+
+                int beveragePrice = order.getBeverage() != null ? order.getBeverage().getPrice() : 0;
+                price += beveragePrice;
+                System.out.println("Price for a beverage : " + beveragePrice);
+            }
+        }
+        System.out.println("====Total price of orderings : " + price + " =====Thank you!======");
+    }
+
+    private static CustomerOrder buildDrinkOrder(String drink, String garnish) {
+
         Beverage orderedBeverage = Drink.valueOf(drink.toUpperCase());
 
         if (garnish.toUpperCase().contains(LEMON.toUpperCase())) {
@@ -61,11 +91,7 @@ public class OrderSystem {
                 .build();
     }
 
-    private static CustomerOrder makeLunchOrder(Scanner scanner) {
-        String dish = getOrderedItem(scanner, "Please select dish: " + getItems(Dish.values()), Menu.DISHES);
-        String dessertSuggestionMessage = "Would you like something from dessert? We offer " + getItems(Dessert.values())
-                + " Please enter desert name or leave it empty";
-        String dessert = getOrderedItem(scanner, dessertSuggestionMessage, Menu.DESSERT);
+    private static CustomerOrder buildLunchOrder(String dish, String dessert) {
 
         Dessert dessertValue = !dessert.isEmpty() ? Dessert.valueOf(dessert.toUpperCase()) : null;
 
@@ -74,55 +100,42 @@ public class OrderSystem {
                 .build();
     }
 
-    private static List<String> getItems(MenuItem[] values) {
-        return Arrays.stream(values).map(i -> i.getName())
+    private static List<String> getItemNames(MenuItem[] values) {
+        return Arrays.stream(values).map(i -> i.getName().toLowerCase())
                 .collect(Collectors.toList());
     }
 
-
-    private static String getCustomerGeneralOrder(Scanner scanner, String warningMessage) {
-        return getOrderedItem(scanner, warningMessage, null);
-    }
-
     private static String getOrderedItem(Scanner scanner, String warningMessage, Menu menu) {
-        String order;
+        String itemName;
         while (true) {
             System.out.println(warningMessage);
-            order = scanner.nextLine();
-            if (menu == null) {
-                if (isValidOrder(order)) {
-                    break;
-                }
-            } else {
-                if (isValidItemFromMenu(order, menu)) {
-                    break;
-                }
+            itemName = scanner.nextLine();
+            if (isValidItemFromMenu(itemName, menu)) {
+                break;
             }
         }
-        return order;
+        return itemName;
     }
 
     private static boolean isValidItemFromMenu(String order, Menu menu) {
+        //TODO: Should be removed for getting rid of this switch case
         switch (menu) {
             case DISHES:
-                return getItems(Dish.values()).contains(changeToCamelCase(order));
+                return getItemNames(Dish.values()).contains(order);
             case DESSERT:
-                return getItems(Dessert.values()).contains(changeToCamelCase(order)) || order.isEmpty();
+                return getItemNames(Dessert.values()).contains(order) || order.isEmpty();
             case DRINK:
-                return getItems(Drink.values()).contains(changeToCamelCase(order));
+                return getItemNames(Drink.values()).contains(order);
             case GARNISH:
-                Pattern pattern = Pattern.compile("(?i)(\\blemon(\\b.*\\bice\\b)?)|\\bice\\b$");
+                //TODO: Regex should be removed
+                Pattern pattern = Pattern.compile(GARNISH_REGEX);
                 Matcher matcher = pattern.matcher(order);
                 return matcher.matches() || order.isEmpty();
+            case LUNCH:
+                return order.equalsIgnoreCase(LUNCH) || order.isEmpty();
+            case BEVERAGES:
+                return order.equalsIgnoreCase(BEVERAGE) || order.isEmpty();
         }
         return false;
-    }
-
-    private static String changeToCamelCase(String order) {
-        return !order.isEmpty() ? order.toLowerCase().replaceFirst(order.substring(0, 1), order.substring(0, 1).toUpperCase()) : order;
-    }
-
-    private static boolean isValidOrder(String order) {
-        return order.equalsIgnoreCase(LUNCH) || order.equalsIgnoreCase(DRINK);
     }
 }

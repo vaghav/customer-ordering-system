@@ -1,7 +1,7 @@
 package com.company.drinks;
 
 import com.company.util.Constants;
-import com.company.util.MenuItem;
+import com.company.menu.MenuItem;
 
 import static  com.company.util.Constants.COLA_PRICE;
 import static  com.company.util.Constants.SPRITE_PRICE;

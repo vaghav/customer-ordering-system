@@ -1,6 +1,8 @@
-package com.company.util;
+package com.company.menu;
 
 public interface MenuItem {
+
+    int getPrice();
 
     String getName();
 }

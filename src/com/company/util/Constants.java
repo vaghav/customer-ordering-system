@@ -6,6 +6,7 @@ public abstract class Constants {
     //Menu items
     public static final String LUNCH = "Lunch";
     public static final String DRINK = "Drink";
+    public static final String BEVERAGE = "Beverage";
 
     // Dishes
     public static String ITALIAN = "Italian";
